@@ -54,11 +54,10 @@
     <div class="weather" id="weather"></div>
   </div>
 
-  <script>
     const apiKey = "YOUR_API_KEY_HERE"; // Replace with your OpenWeatherMap API key
 
     async function getWeather() {
-      const city = document.getElementById("city").value;
+      const city = document.getElementById("city").value.trim();
       const weatherDiv = document.getElementById("weather");
 
       if (!city) {
@@ -66,13 +65,21 @@
         return;
       }
 
+      weatherDiv.innerHTML = "<p>Loading...</p>";
+
       try {
         const response = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`
+          `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&appid=${apiKey}`
         );
 
         if (!response.ok) {
-          throw new Error("City not found");
+          if (response.status === 401) {
+            throw new Error("Invalid API key. Please check your OpenWeatherMap API key.");
+          } else if (response.status === 404) {
+            throw new Error("City not found. Please check the city name.");
+          } else {
+            throw new Error(`Error: ${response.status} ${response.statusText}`);
+          }
         }
 
         const data = await response.json();
@@ -82,16 +89,15 @@
         const icon = data.weather[0].icon;
 
         weatherDiv.innerHTML = `
-          <h2>${data.name}</h2>
-          <img src="https://openweathermap.org/img/wn/${icon}@2x.png" />
-          <p>${temp}°C</p>
-          <p>${description}</p>
+          <h2>${data.name}, ${data.sys.country}</h2>
+          <img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${description}" />
+          <p><strong>${temp}°C</strong></p>
+          <p>${description.charAt(0).toUpperCase() + description.slice(1)}</p>
         `;
       } catch (error) {
-        weatherDiv.innerHTML = `<p>${error.message}</p>`;
+        weatherDiv.innerHTML = `<p style="color: #ffcccc;">${error.message}</p>`;
       }
     }
-  </script>
 
 </body>
 </html>
